@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>My Task 3</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        font-family: Arial, sans-serif;
+      }
+
+      .container {
+        text-align: center;
+      }
+
+      .notification {
+        color: red;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>Destination Date Calculator</h1>
+      <form id="destinationForm">
+        <label for="startSelect">Start:</label>
+        <select id="startSelect">
+          <option value="Tirunelveli">Tirunelveli</option>
+          <option value="Madurai">Madurai</option>
+          <option value="Trichy">Trichy</option>
+          <option value="Coimbatore">Coimbatore</option>
+          <option value="Salem">Salem</option>
+          <option value="Chennai">Chennai</option>
+          <option value="Bangalore">Bangalore</option>
+        </select>
+        <label for="endSelect">End:</label>
+        <select id="endSelect">
+          <option value="Bangalore">Bangalore</option>
+          <option value="chennai">chennai</option>
+          <option value="salem">salem</option>
+          <option value="Coimbatore">Coimbatore</option>
+          <option value="Trichy">Trichy</option>
+          <option value="Madurai">Madurai</option>
+          <option value="Tirunelveli">Tirunelveli</option>
+        </select>
+        <button type="submit">Calculate</button>
+      </form>
+      <div id="result"></div>
+    </div>
+
+    <script>
+      const form = document.getElementById("destinationForm");
+      const resultDiv = document.getElementById("result");
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const start = document.getElementById("startSelect").value;
+        const end = document.getElementById("endSelect").value;
+        const routeMap = {
+          Tirunelveli: { Madurai: 2 },
+          Madurai: { Tirunelveli: 2, Trichy: 2, Coimbatore: 3, Salem: 3 },
+          Trichy: { Chennai: 3 },
+          Coimbatore: { Chennai: 3, Bangalore: 3 },
+          Salem: { Bangalore: 2 },
+          Chennai: { Bangalore: 2, Mumbai: 5 },
+          Bangalore: { Mumbai: 3 },
+        };
+
+        function findShortestRoute(startCity, endCity, routeMap) {
+          const distances = {};
+          const previous = {};
+          const priorityQueue = {};
+
+          for (const city in routeMap) {
+            distances[city] = city === startCity ? 0 : Infinity;
+            priorityQueue[city] = distances[city];
+          }
+
+          while (Object.keys(priorityQueue).length > 0) {
+            const currentCity = Object.keys(priorityQueue).reduce((a, b) =>
+              distances[a] < distances[b] ? a : b
+            );
+
+            if (currentCity === endCity) {
+              const path = [];
+              let city = endCity;
+              while (city) {
+                path.unshift(city);
+                city = previous[city];
+              }
+              return { path, distance: distances[endCity] };
+            }
+
+            delete priorityQueue[currentCity];
+
+            for (const neighbor in routeMap[currentCity]) {
+              const distanceToNeighbor = distances[currentCity] + routeMap[currentCity][neighbor];
+              if (distanceToNeighbor < distances[neighbor]) {
+                distances[neighbor] = distanceToNeighbor;
+                previous[neighbor] = currentCity;
+                priorityQueue[neighbor] = distanceToNeighbor;
+              }
+            }
+          }
+
+          return null;
+        }
+
+        const shortestRoute = findShortestRoute(start, end, routeMap);
+        console.log("short", shortestRoute);
+        if (shortestRoute) {
+          const totalDays = shortestRoute.distance;
+          const startDate = new Date();
+          const endDate = addBusinessDays(startDate, totalDays);
+          const formattedEndDate = formatDate(endDate);
+          resultDiv.innerHTML = `
+          <p>Route: ${shortestRoute.path.join(" -> ")}</p>
+          <p>Total Days: ${totalDays}</p>
+          <p>Start Date: ${formatDate(startDate)}</p>
+          <p>End Date: ${formattedEndDate}</p>
+        `;
+        } else {
+          resultDiv.innerHTML = '<p class="notification">Route not found</p>';
+        }
+      });
+
+      function addBusinessDays(date, days) {
+        const newDate = new Date(date);
+        let count = 0;
+        while (count < days) {
+          newDate.setDate(newDate.getDate() + 1);
+          if (newDate.getDay() !== 0 && newDate.getDay() !== 6) {
+            count++;
+          }
+        }
+        return newDate;
+      }
+
+      function formatDate(date) {
+        const options = { year: "numeric", month: "long", day: "numeric" };
+        return date.toLocaleDateString(undefined, options);
+      }
+    </script>
+  </body>
+</html>
